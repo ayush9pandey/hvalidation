@@ -117,9 +117,8 @@ ground_truth['S'] = sol[:,1]
 ground_truth['C'] = sol[:,2]
 ground_truth['P'] = sol[:,3]
 
-def g_m2(phi, timepoints):
-    """Returns goodness metric (float) by computing summed norm 
-    of difference between states of the model m2 and ground truth m1
+def sim_m2(phi, timepoints):
+    """Returns simulated data for the model m2
     at the given condition on parameters: phi.
 
     Args:
@@ -135,14 +134,10 @@ def g_m2(phi, timepoints):
               'P':np.zeros(shape_t)}
     sol_m2['C'] = sol[:,0]
     sol_m2['P'] = sol[:,1]
-    error = 0
-    for state in states_m2:
-        error += norm(sol_m2[state] - ground_truth[state], ord=2)
-    return -1*error
+    return sol_m2
     
-def g_m3(phi, timepoints):
-    """Returns goodness metric (float) by computing summed norm 
-    of difference between states of the model m3 and ground truth m1
+def sim_m3(phi, timepoints):
+    """Returns simulated data for the model m3
     at the given condition on parameters: phi.
 
     Args:
@@ -158,14 +153,10 @@ def g_m3(phi, timepoints):
               'P':np.zeros(shape_t)}
     sol_m3['C'] = sol[:,0]
     sol_m3['P'] = sol[:,1]
-    error = 0
-    for state in states_m3:
-        error += norm(sol_m3[state] - ground_truth[state], ord=2)
-    return -1*error
+    return sol_m3
 
-def g_m4(phi, timepoints):
-    """Returns goodness metric (float) by computing summed norm 
-    of difference between states of the model m4 and ground truth m1
+def sim_m4(phi, timepoints):
+    """Returns simulated data for the model m4
     at the given condition on parameters: phi.
 
     Args:
@@ -179,10 +170,7 @@ def g_m4(phi, timepoints):
     sol = odeint(m4, t=timepoints, y0=init_cond, args=params, tfirst=True)
     sol_m4 = {'P':np.zeros(shape_t)}
     sol_m4['P'] = sol[:,0]
-    error = 0
-    for state in states_m4:
-        error += norm(sol_m4[state] - ground_truth[state], ord=2)
-    return -1*error
+    return sol_m4
 
 all_phi = [
     np.array([10, 100]),
@@ -190,7 +178,22 @@ all_phi = [
     np.array([10, 1]),
     np.array([1, 1])
 ]
+
+def g(data_i, data_j):
+    """Compute scalar goodness metric given data from two models
+    data_i and data_j must be dictionaries with keys for state name
+    and value corresponding to the numpy array of the simulated/ground 
+    truth data
+    """
+    error = 0
+    for state in data_i.keys() & data_j.keys():
+        error += norm(data_i[state] - data_j[state], ord=2)
+    return -1*error
+
 for phi_i in all_phi:
-    print("For condition = {0}, the goodness of m2 = {1}".format(phi_i, g_m2(phi_i, timepoints)))
-    print("For condition = {0}, the goodness of m3 = {1}".format(phi_i, g_m3(phi_i, timepoints)))
-    print("For condition = {0}, the goodness m4 = {1}".format(phi_i, g_m4(phi_i, timepoints)))
+    data_i = sim_m2(phi_i, timepoints)
+    print("For condition = {0}, the goodness of m2 = {1}".format(phi_i, g(data_i, ground_truth)))
+    data_i = sim_m3(phi_i, timepoints)
+    print("For condition = {0}, the goodness of m3 = {1}".format(phi_i, g(data_i, ground_truth)))
+    data_i = sim_m4(phi_i, timepoints)
+    print("For condition = {0}, the goodness m4 = {1}".format(phi_i, g(data_i, ground_truth)))
